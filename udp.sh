@@ -233,7 +233,7 @@ if jq . >/dev/null 2>&1 <<<'{}'; then
     .listen = ":5667" |
     .cert = "/etc/zivpn/zivpn.crt" |
     .key  = "/etc/zivpn/zivpn.key" |
-    .obfs = "tls" |
+    .obfs = "wechat" |
     .mux = true |
     .mux_concurrency = 500 |
     .server = $ip
@@ -1568,10 +1568,10 @@ EOF
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
 
 # ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
-sysctl -w net.netfilter.nf_conntrack_udp_timeout=180
-sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=180
-grep -q '^net.netfilter.nf_conntrack_udp_timeout=180' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=180' >> /etc/sysctl.conf
-grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=180' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=180' >> /etc/sysctl.conf
+sysctl -w net.netfilter.nf_conntrack_udp_timeout=300
+sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=300
+grep -q '^net.netfilter.nf_conntrack_udp_timeout=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=300' >> /etc/sysctl.conf
+grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=300' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=300' >> /etc/sysctl.conf
 
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf

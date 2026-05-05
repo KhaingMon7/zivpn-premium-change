@@ -233,7 +233,7 @@ if jq . >/dev/null 2>&1 <<<'{}'; then
     .listen = ":5667" |
     .cert = "/etc/zivpn/zivpn.crt" |
     .key  = "/etc/zivpn/zivpn.key" |
-    .obfs = "wechat" |
+    .obfs = "tls" |
     .mux = true |
     .mux_concurrency = 50 |
     .server = $ip
@@ -1568,8 +1568,8 @@ EOF
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
 
 # ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
-sysctl -w net.netfilter.nf_conntrack_udp_timeout=120 || true
-sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=120 || true
+sysctl -w net.netfilter.nf_conntrack_udp_timeout=120
+sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=120
 grep -q '^net.netfilter.nf_conntrack_udp_timeout=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=120' >> /etc/sysctl.conf
 grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=120' >> /etc/sysctl.conf
 

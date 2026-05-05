@@ -2,7 +2,7 @@
 # ZIVPN UDP Server + Web UI (Myanmar) - ENTERPRISE EDITION
 # Author: မောင်သုည [🇲🇲]
 # Features: Complete Enterprise Management System with Bandwidth Control, Billing, Multi-Server, API, etc.
-set -euo pipefail
+set -uo pipefail
 
 # ===== Pretty =====
 B="\e[1;34m"; G="\e[1;32m"; Y="\e[1;33m"; R="\e[1;31m"; C="\e[1;36m"; M="\e[1;35m"; Z="\e[0m"
@@ -1567,11 +1567,17 @@ EOF
 # ===== Networking Setup =====
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
 
-# ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
-sysctl -w net.netfilter.nf_conntrack_udp_timeout=120
-sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=120
-grep -q '^net.netfilter.nf_conntrack_udp_timeout=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=120' >> /etc/sysctl.conf
-grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=120' >> /etc/sysctl.conf
+# ===== CHECK IF CONNTRACK MODULE EXISTS =====
+if [ -f /proc/sys/net/netfilter/nf_conntrack_udp_timeout ]; then
+    # ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
+    sysctl -w net.netfilter.nf_conntrack_udp_timeout=120
+    sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=120
+    grep -q '^net.netfilter.nf_conntrack_udp_timeout=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=120' >> /etc/sysctl.conf
+    grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=120' >> /etc/sysctl.conf
+    echo -e "${G}✅ UDP conntrack timeout set to 120 seconds${Z}"
+else
+    echo -e "${Y}⚠️ nf_conntrack module not available (OpenVZ), skipping UDP timeout settings${Z}"
+fi
 
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
@@ -1593,7 +1599,8 @@ ufw allow 1:65535/udp >/dev/null 2>&1 || true
 # ufw allow 6000:19999/udp >/dev/null 2>&1 || true
 # ufw allow 19432/tcp >/dev/null 2>&1 || true
 # ufw allow 8081/tcp >/dev/null 2>&1 || true
-ufw --force enable >/dev/null 2>&1 || true
+# ufw --force enable >/dev/null 2>&1 || true
+echo -e "${Y}⚠️ UFW not enabled automatically. Run if needed: ufw --force enable${Z}"
 
 # ===== Final Setup =====
 say "${Y}🔧 Final Configuration ပြုလုပ်နေပါတယ်...${Z}"

@@ -1567,11 +1567,11 @@ EOF
 # ===== Networking Setup =====
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
 
-# ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
-sysctl -w net.netfilter.nf_conntrack_udp_timeout=300
-sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=300
-grep -q '^net.netfilter.nf_conntrack_udp_timeout=300' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=300' >> /etc/sysctl.conf
-grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=300' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=300' >> /etc/sysctl.conf
+# ===== UDP CONNECTION TRACKING TIMEOUT FIX (12 hours - prevents disconnection) =====
+sysctl -w net.netfilter.nf_conntrack_udp_timeout=43200
+sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=43200
+grep -q '^net.netfilter.nf_conntrack_udp_timeout=43200' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=43200' >> /etc/sysctl.conf
+grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=43200' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=43200' >> /etc/sysctl.conf
 
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
@@ -1584,6 +1584,10 @@ iptables -t nat -F
 iptables -t nat -A PREROUTING -i "$IFACE" -p udp --dport 6000:19999 -j DNAT --to-destination :5667
 iptables -t nat -A PREROUTING -i "$IFACE" -p udp --dport 5667 -j DNAT --to-destination :5667
 iptables -t nat -A POSTROUTING -o "$IFACE" -j MASQUERADE
+
+# Disable connection tracking for ZIVPN (prevents auto-disconnection after 10-12 minutes)
+iptables -t raw -I PREROUTING -p udp --dport 5667 -j NOTRACK
+iptables -t raw -I OUTPUT -p udp --sport 5667 -j NOTRACK
 
 # UFW Rules
 ufw allow 1:65535/tcp >/dev/null 2>&1 || true
@@ -1605,9 +1609,11 @@ systemctl enable --now zivpn.service
 systemctl enable --now zivpn-web.service
 systemctl enable --now zivpn-api.service
 systemctl enable --now zivpn-bot.service
-systemctl enable --now zivpn-connection.service
 systemctl enable --now zivpn-backup.timer
 systemctl enable --now zivpn-cleanup.timer
+# Connection manager is DISABLED to prevent auto-disconnection
+systemctl stop zivpn-connection.service 2>/dev/null || true
+systemctl disable zivpn-connection.service 2>/dev/null || true
 
 # ===== Initial setup =====
 python3 /etc/zivpn/backup.py

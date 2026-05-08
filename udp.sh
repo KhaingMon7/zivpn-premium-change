@@ -233,9 +233,8 @@ if jq . >/dev/null 2>&1 <<<'{}'; then
     .listen = ":5667" |
     .cert = "/etc/zivpn/zivpn.crt" |
     .key  = "/etc/zivpn/zivpn.key" |
-    .obfs = "tls" |
     .mux = true |
-    .mux_concurrency = 50 |
+    .mux_concurrency = 300 |
     .server = $ip
   ' "$CFG" > "$TMP" && mv "$TMP" "$CFG"
 fi
@@ -1600,6 +1599,17 @@ EOF
 
 # ===== Networking Setup =====
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
+
+# ===== CHECK IF CONNTRACK MODULE EXISTS =====
+if [ -f /proc/sys/net/netfilter/nf_conntrack_udp_timeout ]; then
+    sysctl -w net.netfilter.nf_conntrack_udp_timeout=120 || true
+    sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=120 || true
+    grep -q '^net.netfilter.nf_conntrack_udp_timeout=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=120' >> /etc/sysctl.conf
+    grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=120' >> /etc/sysctl.conf
+else
+    echo -e "${Y}⚠️ nf_conntrack module not available, skipping${Z}"
+fi
+
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
 
@@ -1608,6 +1618,7 @@ IFACE=$(ip -4 route ls | awk '/default/ {print $5; exit}')
 
 # DNAT Rules
 iptables -t nat -F
+iptables -t nat -A PREROUTING -i "$IFACE" -p udp --dport 5667 -j DNAT --to-destination :5667
 iptables -t nat -A PREROUTING -i "$IFACE" -p udp --dport 6000:19999 -j DNAT --to-destination :5667
 iptables -t nat -A POSTROUTING -o "$IFACE" -j MASQUERADE
 
@@ -1619,12 +1630,8 @@ ufw allow 1:65535/udp >/dev/null 2>&1 || true
 # ufw allow 6000:19999/udp >/dev/null 2>&1 || true
 # ufw allow 19432/tcp >/dev/null 2>&1 || true
 # ufw allow 8081/tcp >/dev/null 2>&1 || true
-ufw --force enable >/dev/null 2>&1 || true
-
-# ===== Final Setup =====
-say "${Y}🔧 Final Configuration ပြုလုပ်နေပါတယ်...${Z}"
-chmod +x /etc/zivpn/*.py
-sed -i 's/\r$//' /etc/zivpn/*.py /etc/systemd/system/zivpn* || true
+# ufw --force enable >/dev/null 2>&1 || true
+echo -e "${Y}⚠️ UFW not enabled automatically${Z}"
 
 systemctl daemon-reload
 systemctl enable --now zivpn.service

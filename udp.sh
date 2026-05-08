@@ -82,8 +82,8 @@ mkdir -p /etc/zivpn "$BACKUP_DIR"
 
 # ===== Download ZIVPN binary =====
 say "${Y}⬇️ ZIVPN binary ကို ဒေါင်းနေပါတယ်...${Z}"
-PRIMARY_URL="https://github.com/zahidbd2/udp-zivpn/releases/latest/download/udp-zivpn-linux-amd64"
-FALLBACK_URL="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64"
+PRIMARY_URL="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64"
+FALLBACK_URL="https://github.com/zahidbd2/udp-zivpn/releases/latest/download/udp-zivpn-linux-amd64"
 TMP_BIN="$(mktemp)"
 if ! curl -fsSL -o "$TMP_BIN" "$PRIMARY_URL"; then
   echo -e "${Y}Primary URL မရ — latest ကို စမ်းပါတယ်...${Z}"
@@ -233,7 +233,7 @@ if jq . >/dev/null 2>&1 <<<'{}'; then
     .listen = ":5667" |
     .cert = "/etc/zivpn/zivpn.crt" |
     .key  = "/etc/zivpn/zivpn.key" |
-    .obfs = "tls" |
+    .obfs = "wechat" |
     .mux = true |
     .mux_concurrency = 500 |
     .server = $ip

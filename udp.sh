@@ -2,7 +2,7 @@
 # ZIVPN UDP Server + Web UI (Myanmar) - ENTERPRISE EDITION
 # Author: မောင်သုည [🇲🇲]
 # Features: Complete Enterprise Management System with Bandwidth Control, Billing, Multi-Server, API, etc.
-set -euo pipefail
+set -uo pipefail
 
 # ===== Pretty =====
 B="\e[1;34m"; G="\e[1;32m"; Y="\e[1;33m"; R="\e[1;31m"; C="\e[1;36m"; M="\e[1;35m"; Z="\e[0m"
@@ -82,8 +82,8 @@ mkdir -p /etc/zivpn "$BACKUP_DIR"
 
 # ===== Download ZIVPN binary =====
 say "${Y}⬇️ ZIVPN binary ကို ဒေါင်းနေပါတယ်...${Z}"
-PRIMARY_URL="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64"
-FALLBACK_URL="https://github.com/zahidbd2/udp-zivpn/releases/latest/download/udp-zivpn-linux-amd64"
+PRIMARY_URL="https://github.com/zahidbd2/udp-zivpn/releases/latest/download/udp-zivpn-linux-amd64"
+FALLBACK_URL="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64"
 TMP_BIN="$(mktemp)"
 if ! curl -fsSL -o "$TMP_BIN" "$PRIMARY_URL"; then
   echo -e "${Y}Primary URL မရ — latest ကို စမ်းပါတယ်...${Z}"
@@ -233,7 +233,7 @@ if jq . >/dev/null 2>&1 <<<'{}'; then
     .listen = ":5667" |
     .cert = "/etc/zivpn/zivpn.crt" |
     .key  = "/etc/zivpn/zivpn.key" |
-    .obfs = "wechat" |
+    .obfs = "tls" |
     .mux = true |
     .mux_concurrency = 500 |
     .server = $ip
@@ -1567,6 +1567,12 @@ EOF
 # ===== Networking Setup =====
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
 
+# ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
+sysctl -w net.netfilter.nf_conntrack_udp_timeout=120 || true
+sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=120 || true
+grep -q '^net.netfilter.nf_conntrack_udp_timeout=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=120' >> /etc/sysctl.conf
+grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=120' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=120' >> /etc/sysctl.conf
+
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
 
@@ -1578,10 +1584,6 @@ iptables -t nat -F
 iptables -t nat -A PREROUTING -i "$IFACE" -p udp --dport 6000:19999 -j DNAT --to-destination :5667
 iptables -t nat -A PREROUTING -i "$IFACE" -p udp --dport 5667 -j DNAT --to-destination :5667
 iptables -t nat -A POSTROUTING -o "$IFACE" -j MASQUERADE
-
-# Disable connection tracking for ZIVPN (prevents auto-disconnection after 10-12 minutes)
-iptables -t raw -I PREROUTING -p udp --dport 5667 -j NOTRACK
-iptables -t raw -I OUTPUT -p udp --sport 5667 -j NOTRACK
 
 # UFW Rules
 ufw allow 1:65535/tcp >/dev/null 2>&1 || true
@@ -1603,11 +1605,9 @@ systemctl enable --now zivpn.service
 systemctl enable --now zivpn-web.service
 systemctl enable --now zivpn-api.service
 systemctl enable --now zivpn-bot.service
+systemctl enable --now zivpn-connection.service
 systemctl enable --now zivpn-backup.timer
 systemctl enable --now zivpn-cleanup.timer
-# Connection manager is DISABLED to prevent auto-disconnection
-systemctl stop zivpn-connection.service 2>/dev/null || true
-systemctl disable zivpn-connection.service 2>/dev/null || true
 
 # ===== Initial setup =====
 python3 /etc/zivpn/backup.py

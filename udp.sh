@@ -233,9 +233,9 @@ if jq . >/dev/null 2>&1 <<<'{}'; then
     .listen = ":5667" |
     .cert = "/etc/zivpn/zivpn.crt" |
     .key  = "/etc/zivpn/zivpn.key" |
-    .obfs = "random" |
+    .obfs = "tls" |
     .mux = true |
-    .mux_concurrency = 10 |
+    .mux_concurrency = 50 |
     .server = $ip
   ' "$CFG" > "$TMP" && mv "$TMP" "$CFG"
 fi
@@ -1601,16 +1601,6 @@ EOF
 # ===== Networking Setup =====
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
 
-# ===== INCREASE SYSTEM LIMITS FOR MANY USERS =====
-ulimit -n 65535
-grep -q '^root soft nofile 65535' /etc/security/limits.conf || echo -e "root soft nofile 65535\nroot hard nofile 65535" >> /etc/security/limits.conf
-
-# ===== INCREASE KERNEL NETWORK BUFFERS =====
-sysctl -w net.core.rmem_max=26214400
-sysctl -w net.core.wmem_max=26214400
-grep -q '^net.core.rmem_max=26214400' /etc/sysctl.conf || echo 'net.core.rmem_max=26214400' >> /etc/sysctl.conf
-grep -q '^net.core.wmem_max=26214400' /etc/sysctl.conf || echo 'net.core.wmem_max=26214400' >> /etc/sysctl.conf
-
 # ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
 sysctl -w net.netfilter.nf_conntrack_udp_timeout=120 || true
 sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=120 || true
@@ -1637,8 +1627,7 @@ ufw allow 1:65535/udp >/dev/null 2>&1 || true
 # ufw allow 6000:19999/udp >/dev/null 2>&1 || true
 # ufw allow 19432/tcp >/dev/null 2>&1 || true
 # ufw allow 8081/tcp >/dev/null 2>&1 || true
-# ufw --force enable >/dev/null 2>&1 || true
-echo -e "${Y}⚠️ UFW not enabled automatically. Run if needed: ufw --force enable${Z}"
+ufw --force enable >/dev/null 2>&1 || true
 
 # ===== Final Setup =====
 say "${Y}🔧 Final Configuration ပြုလုပ်နေပါတယ်...${Z}"

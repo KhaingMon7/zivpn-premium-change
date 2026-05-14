@@ -2,7 +2,7 @@
 # ZIVPN UDP Server + Web UI (Myanmar) - ENTERPRISE EDITION
 # Author: မောင်သုည [🇲🇲]
 # Features: Complete Enterprise Management System with Bandwidth Control, Billing, Multi-Server, API, etc.
-set -uo pipefail
+set -euo pipefail
 
 # ===== Pretty =====
 B="\e[1;34m"; G="\e[1;32m"; Y="\e[1;33m"; R="\e[1;31m"; C="\e[1;36m"; M="\e[1;35m"; Z="\e[0m"

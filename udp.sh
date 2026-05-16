@@ -82,8 +82,8 @@ mkdir -p /etc/zivpn "$BACKUP_DIR"
 
 # ===== Download ZIVPN binary =====
 say "${Y}⬇️ ZIVPN binary ကို ဒေါင်းနေပါတယ်...${Z}"
-PRIMARY_URL="https://github.com/zahidbd2/udp-zivpn/releases/latest/download/udp-zivpn-linux-amd64"
-FALLBACK_URL="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64"
+PRIMARY_URL="https://github.com/zahidbd2/udp-zivpn/releases/download/udp-zivpn_1.4.9/udp-zivpn-linux-amd64"
+FALLBACK_URL="https://github.com/zahidbd2/udp-zivpn/releases/latest/download/udp-zivpn-linux-amd64"
 TMP_BIN="$(mktemp)"
 if ! curl -fsSL -o "$TMP_BIN" "$PRIMARY_URL"; then
   echo -e "${Y}Primary URL မရ — latest ကို စမ်းပါတယ်...${Z}"
@@ -235,7 +235,7 @@ if jq . >/dev/null 2>&1 <<<'{}'; then
     .key  = "/etc/zivpn/zivpn.key" |
     .obfs = "wechat" |
     .mux = true |
-    .mux_concurrency = 5000 |
+    .mux_concurrency = 500 |
     .server = $ip
   ' "$CFG" > "$TMP" && mv "$TMP" "$CFG"
 fi
@@ -1567,7 +1567,7 @@ EOF
 # ===== Networking Setup =====
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
 
-# ===== UDP CONNECTION TRACKING TIMEOUT FIX - PERMANENT NO TIMEOUT =====
+# ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
 sysctl -w net.netfilter.nf_conntrack_udp_timeout=180
 sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=180
 grep -q '^net.netfilter.nf_conntrack_udp_timeout=180' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=180' >> /etc/sysctl.conf
@@ -1578,11 +1578,6 @@ grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1
 
 IFACE=$(ip -4 route ls | awk '/default/ {print $5; exit}')
 [ -n "${IFACE:-}" ] || IFACE=eth0
-
-# Disable connection tracking for UDP (prevents timeout disconnection)
-iptables -t raw -I PREROUTING -p udp --dport 5667 -j NOTRACK
-iptables -t raw -I PREROUTING -p udp --dport 6000:19999 -j NOTRACK
-iptables -t raw -I OUTPUT -p udp --sport 5667 -j NOTRACK
 
 # DNAT Rules
 iptables -t nat -F
@@ -1598,8 +1593,7 @@ ufw allow 1:65535/udp >/dev/null 2>&1 || true
 # ufw allow 6000:19999/udp >/dev/null 2>&1 || true
 # ufw allow 19432/tcp >/dev/null 2>&1 || true
 # ufw allow 8081/tcp >/dev/null 2>&1 || true
-# ufw --force enable >/dev/null 2>&1 || true
-echo -e "${Y}⚠️ UFW not enabled automatically. Run after reboot: ufw --force enable${Z}"
+ufw --force enable >/dev/null 2>&1 || true
 
 # ===== Final Setup =====
 say "${Y}🔧 Final Configuration ပြုလုပ်နေပါတယ်...${Z}"

@@ -2,7 +2,7 @@
 # ZIVPN UDP Server + Web UI (Myanmar) - ENTERPRISE EDITION
 # Author: မောင်သုည [🇲🇲]
 # Features: Complete Enterprise Management System with Bandwidth Control, Billing, Multi-Server, API, etc.
-set -euo pipefail
+set -uo pipefail
 
 # ===== Pretty =====
 B="\e[1;34m"; G="\e[1;32m"; Y="\e[1;33m"; R="\e[1;31m"; C="\e[1;36m"; M="\e[1;35m"; Z="\e[0m"
@@ -1568,10 +1568,10 @@ EOF
 echo -e "${Y}🌐 Network Configuration ပြုလုပ်နေပါတယ်...${Z}"
 
 # ===== UDP CONNECTION TRACKING TIMEOUT FIX =====
-sysctl -w net.netfilter.nf_conntrack_udp_timeout=180
-sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=180
-grep -q '^net.netfilter.nf_conntrack_udp_timeout=180' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=180' >> /etc/sysctl.conf
-grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=180' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=180' >> /etc/sysctl.conf
+sysctl -w net.netfilter.nf_conntrack_udp_timeout=999999
+sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=999999
+grep -q '^net.netfilter.nf_conntrack_udp_timeout=999999' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout=999999' >> /etc/sysctl.conf
+grep -q '^net.netfilter.nf_conntrack_udp_timeout_stream=999999' /etc/sysctl.conf || echo 'net.netfilter.nf_conntrack_udp_timeout_stream=999999' >> /etc/sysctl.conf
 
 sysctl -w net.ipv4.ip_forward=1 >/dev/null
 grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
